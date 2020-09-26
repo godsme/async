@@ -30,6 +30,13 @@ namespace detail {
 
       explicit future_object_base(future_context& context) : context_{context} {}
 
+      auto move_observers(future_object_base<T>& to) noexcept -> void {
+         for (auto &observer: observers_) {
+            to.add_observer(observer);
+         }
+         observers_.clear();
+      }
+
       auto add_observer(observer_type observer) {
          observers_.emplace_back(std::move(observer));
       }
@@ -38,11 +45,19 @@ namespace detail {
          if (ready_ || !present_) return;
          ready_ = true;
          notify_observers();
+         destroy();
       }
 
       auto ready() const noexcept -> bool { return ready_; }
 
       auto launch() {}
+
+      auto destroy() noexcept -> void {
+         if(registered) {
+            context_.unregister_future(this);
+            registered = false;
+         }
+      }
 
       virtual ~future_object_base() = default;
 
@@ -67,6 +82,7 @@ namespace detail {
       std::deque<observer_type> observers_;
 
    protected:
+      bool registered{false};
       bool present_{false};
       bool ready_{false};
    };

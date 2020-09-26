@@ -17,8 +17,13 @@ struct future_registry {
       futures_.emplace(std::move(future));
    }
 
-   auto unregister_future(future_handle& future) noexcept -> void {
-      futures_.erase(future);
+   auto unregister_future(abstract_future* future) noexcept -> void {
+      for(auto&& obj : futures_) {
+         if(obj.get() == future) {
+            futures_.erase(obj);
+            return;
+         }
+      }
    }
 
    auto empty() const noexcept -> bool {

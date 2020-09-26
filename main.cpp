@@ -8,7 +8,7 @@ using failure_handler = std::function<auto (status_t) -> void>;
 int main() {
    future<int> f{};
 
-   f.map([](auto) -> void {});
+   f.map([](auto) -> future<long> { return future<long>{}; });
 
    return 0;
 }
