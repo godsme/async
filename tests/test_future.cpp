@@ -57,6 +57,10 @@ namespace {
 
       p.set_value(10);
       p.commit();
+
+      REQUIRE_FALSE(value_set);
+      REQUIRE_FALSE(p.valid());
+
       p1.set_value(20);
       p1.commit();
 

@@ -20,6 +20,11 @@ namespace detail {
          : future_object<R>(context), subject_{std::move(subject)}, f_{std::forward<F>(f)} {}
 
    protected:
+      auto commit() noexcept -> void {
+         future_object<R>::commit();
+         subject_.reset();
+      }
+   protected:
       std::decay_t<F> f_;
       subject_type subject_;
    };
@@ -33,7 +38,7 @@ namespace detail {
 
       auto on_future_ready(A const &value) noexcept -> void override {
          future_object<R>::set_value(super::f_(value));
-         future_object<R>::commit();
+         super::commit();
       }
    };
 
@@ -47,7 +52,7 @@ namespace detail {
       auto on_future_ready(A const &value) noexcept -> void override {
          super::f_(value);
          future_object<void>::set_value();
-         future_object<void>::commit();
+         super::commit();
       }
    };
 
@@ -60,7 +65,7 @@ namespace detail {
 
       auto on_future_ready() noexcept -> void override {
          future_object<R>::set_value(super::f_());
-         future_object<R>::commit();
+         super::commit();
       }
    };
 
@@ -74,7 +79,7 @@ namespace detail {
       auto on_future_ready() noexcept -> void override {
          super::f_();
          future_object<void>::set_value();
-         future_object<void>::commit();
+         super::commit();
       }
    };
 }

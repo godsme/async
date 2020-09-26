@@ -36,6 +36,12 @@ namespace detail {
          : super(context), subject_{std::move(subject)}, f_{std::forward<F>(f)} {}
 
    protected:
+      auto destroy() noexcept -> void {
+         super::destroy();
+         subject_.reset();
+      }
+
+   protected:
       std::decay_t <F> f_;
       subject_type subject_;
    };
