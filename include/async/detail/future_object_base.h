@@ -34,7 +34,11 @@ namespace detail {
 
       auto set_fail_handler(failure_handler&& handler) noexcept -> void {
          if(f_on_fail_) return;
-         f_on_fail_ = std::move(handler);
+         if(!ready_) {
+            f_on_fail_ = std::move(handler);
+         } else if(!present_) {
+            handler(failure_);
+         }
       }
 
       auto move_observers(future_object_base<T>& to) noexcept -> void {
