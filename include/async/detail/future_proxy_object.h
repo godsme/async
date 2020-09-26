@@ -35,6 +35,12 @@ namespace detail {
       future_proxy_object_base(future_context &context, subject_type subject, F &&f)
          : super(context), subject_{std::move(subject)}, f_{std::forward<F>(f)} {}
 
+      auto on_future_fail(status_t cause) noexcept -> void override {
+         super::on_fail(cause);
+         super::commit();
+         subject_.reset();
+      }
+
    protected:
       auto destroy() noexcept -> void {
          super::destroy();

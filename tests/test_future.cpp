@@ -25,12 +25,12 @@ namespace {
       promise<int> p;
       {
          auto f = p.get_future(context)
-         .map([](int value) { return value + 10; })
-         .map([](int value) -> bool { return value > 20; })
-         .map([&](bool value) -> future<long> {
-            promise<long> p1;
-            return p1.get_future(context);
-         });
+            .then([](int value) { return value + 10; })
+            .then([](int value) -> bool { return value > 20; })
+            .then([&](bool value) -> future<long> {
+               promise<long> p1;
+               return p1.get_future(context);
+            });
 
          REQUIRE(context.size() == 0);
       }
@@ -38,34 +38,55 @@ namespace {
       REQUIRE(context.size() == 1);
    }
 
+   struct remote_calc {
+      auto set_value(long value) {
+         if(cond) {
+            p.set_value((long)(value + 10));
+         } else {
+            p.set_value((long)(value - 10));
+         }
+         p.commit();
+      }
+
+      bool cond{false};
+      promise<long> p;
+   };
+
    SCENARIO("promise set") {
       future_context context;
 
       std::optional<long> value_set;
-      promise<int> p;
       promise<long> p1;
+      promise<int> p2;
+      remote_calc  calc;
       {
-         auto f = p.get_future(context)
-            .map([](int value) { return value + 10; })
-            .map([](int value) -> bool { return value > 20; })
-            .map([&](bool value) -> future<long> {
-               return p1.get_future(context);})
-            .map([&](long value){ value_set = value; });
+         auto f1 = p1.get_future(context)
+            .then([&](long value) { value_set = value; });
+
+         auto f2 = p2.get_future(context)
+            .then([](int value) { return value + 10; })
+            .then([](int value) -> bool { return value > 20; })
+            .then([&](bool value) -> future<long> {
+               calc.cond = value;
+               return calc.p.get_future(context);
+            })
+            .sink(p1);
 
          REQUIRE(context.size() == 0);
       }
 
-      p.set_value(10);
-      p.commit();
+      p2.set_value(10);
+      p2.commit();
 
       REQUIRE_FALSE(value_set);
-      REQUIRE_FALSE(p.valid());
+      REQUIRE_FALSE(p2.valid());
 
-      p1.set_value(20);
+      calc.set_value(20);
+
       p1.commit();
 
-      REQUIRE(value_set);
-      REQUIRE(value_set.value() == 20);
+      REQUIRE(value_set.has_value());
+      REQUIRE(value_set.value() == 10);
 
       REQUIRE(context.size() == 0);
    }

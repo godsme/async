@@ -7,9 +7,13 @@
 
 #include <async/detail/future_callback_object.h>
 #include <async/detail/future_proxy_object.h>
+#include "status_t.h"
 
 template<typename T>
 struct future;
+
+template<typename T>
+struct promise;
 
 template<typename T>
 constexpr bool Is_Future = false;
@@ -27,7 +31,7 @@ struct future {
    {}
 
    template<typename F, typename R = std::invoke_result_t<F, T>, typename = std::enable_if_t<!Is_Future<R>>>
-   auto map(F&& callback) noexcept -> future<R> {
+   auto then(F&& callback) noexcept -> future<R> {
       if(context_ == nullptr || !object_) return {};
 
       auto cb = std::make_shared<detail::future_callback_object<R, F, T>>(*context_, object_, std::forward<F>(callback));
@@ -36,7 +40,7 @@ struct future {
    }
 
    template<typename F, typename R = std::invoke_result_t<F, T>, typename = std::enable_if_t<Is_Future<R>>>
-   auto map(F&& callback) noexcept -> R {
+   auto then(F&& callback) noexcept -> R {
       if(context_ == nullptr || !object_) return {};
 
       auto cb = std::make_shared<detail::future_proxy_object<R, F, T>>(*context_, object_, std::forward<F>(callback));
@@ -44,9 +48,17 @@ struct future {
       return R{*context_, cb};
    }
 
-   auto launch() {
-      if(object_) object_->launch();
+   template<typename F, typename = std::enable_if_t<std::is_invocable_r_v<void, F, status_t>>>
+   auto fail(F&& on_fail) noexcept -> future<T>& {
+      if(!object_) {
+         on_fail(status_t::invalid_data);
+      } else {
+         object_->set_fail_handler(std::forward<F>(on_fail));
+      }
+      return *this;
    }
+
+   auto sink(promise<T>& p) -> future<void>;
 
    inline auto valid() const noexcept -> bool {
       return static_cast<bool>(object_);

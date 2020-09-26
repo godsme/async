@@ -11,6 +11,8 @@
 #include <deque>
 #include <memory>
 #include <async/future_context.h>
+#include <async/status_t.h>
+#include <async/failure_handler.h>
 
 namespace detail {
    template<typename T>
@@ -30,6 +32,11 @@ namespace detail {
 
       explicit future_object_base(future_context& context) : context_{context} {}
 
+      auto set_fail_handler(failure_handler&& handler) noexcept -> void {
+         if(f_on_fail_) return;
+         f_on_fail_ = std::move(handler);
+      }
+
       auto move_observers(future_object_base<T>& to) noexcept -> void {
          for (auto &observer: observers_) {
             to.add_observer(observer);
@@ -46,10 +53,15 @@ namespace detail {
       }
 
       auto commit() noexcept -> void {
-         if (ready_ || !present_) return;
+         if (ready_ ) return;
          ready_ = true;
+         if(!present_ && f_on_fail_) f_on_fail_(failure_);
          notify_observers();
          destroy();
+      }
+
+      auto on_fail(status_t cause) noexcept -> void {
+         failure_ = cause;
       }
 
       auto ready() const noexcept -> bool { return ready_; }
@@ -80,7 +92,10 @@ namespace detail {
    private:
       auto notify_observer(observer_type &observer) noexcept -> void {
          auto o = observer.lock();
-         if (o) notify_observer(*o);
+         if (o) {
+            if(present_) notify_observer(*o);
+            else o->on_future_fail(failure_);
+         }
       }
 
       virtual auto notify_observer(future_observer<T> &) noexcept -> void = 0;
@@ -88,6 +103,8 @@ namespace detail {
    private:
       future_context& context_;
       std::deque<observer_type> observers_;
+      status_t failure_{};
+      failure_handler f_on_fail_;
 
    protected:
       bool registered{false};

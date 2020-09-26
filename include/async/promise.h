@@ -37,15 +37,17 @@ protected:
 };
 
 template<typename T>
-struct promise : promise_base<T>{
+struct promise : promise_base<T> {
    using super = promise_base<T>;
 
-   auto set_value(T&& value) -> void {
+   template<typename V, typename = std::enable_if_t<std::is_convertible_v<std::decay_t<V>, T>>>
+   auto set_value(V&& value) -> void {
       auto future = super::future_.lock();
       if(future) {
-         future->set_value(std::move(value));
+         future->set_value(std::forward<V>(value));
       }
    }
+
 };
 
 template<>
@@ -58,6 +60,20 @@ struct promise<void> : promise_base<void> {
          future->set_value();
       }
    }
+
+   auto on_fail(status_t status) -> void {
+      auto future = super::future_.lock();
+      if(future) {
+         future->on_fail(status);
+      }
+   }
 };
+
+template<typename T>
+auto future<T>::sink(promise<T>& p) -> future<void> {
+   return then([=](auto &&value) mutable -> void {
+      p.set_value(std::forward<decltype(value)>(value));
+   });
+}
 
 #endif //ASYNC_PROMISE_H
