@@ -23,7 +23,7 @@ namespace detail {
       using super = future_object<R>;
 
       auto on_future_fail(status_t cause) noexcept -> void override {
-         super::on_fail(cause);
+         future_object<R>::on_fail(cause);
          commit();
       }
 

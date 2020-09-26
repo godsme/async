@@ -46,11 +46,15 @@ namespace detail {
             to.add_observer(observer);
          }
          observers_.clear();
+
+         if(f_on_fail_) {
+            to.set_fail_handler(std::move(f_on_fail_));
+         }
       }
 
       auto add_observer(observer_type observer) {
          if(ready_) {
-            notify_observer(observer);
+            notify_observer_(observer);
          } else {
             observers_.emplace_back(std::move(observer));
          }
@@ -59,12 +63,15 @@ namespace detail {
       auto commit() noexcept -> void {
          if (ready_ ) return;
          ready_ = true;
-         if(!present_ && f_on_fail_) f_on_fail_(failure_);
+         if(!present_ && static_cast<bool>(f_on_fail_)) {
+            f_on_fail_(failure_);
+         }
          notify_observers();
          destroy();
       }
 
       auto on_fail(status_t cause) noexcept -> void {
+         if (present_ || ready_) return;
          failure_ = cause;
       }
 
@@ -88,13 +95,13 @@ namespace detail {
    protected:
       auto notify_observers() {
          for (auto &observer: observers_) {
-            notify_observer(observer);
+            notify_observer_(observer);
          }
          observers_.clear();
       }
 
    private:
-      auto notify_observer(observer_type &observer) noexcept -> void {
+      auto notify_observer_(observer_type &observer) noexcept -> void {
          auto o = observer.lock();
          if (o) {
             if(present_) notify_observer(*o);

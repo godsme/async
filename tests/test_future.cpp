@@ -48,6 +48,11 @@ namespace {
          p.commit();
       }
 
+      auto on_fail(status_t cause) {
+         p.on_fail(cause);
+         p.commit();
+      }
+
       bool cond{false};
       promise<long> p;
    };
@@ -87,6 +92,47 @@ namespace {
 
       REQUIRE(value_set.has_value());
       REQUIRE(value_set.value() == 10);
+
+      REQUIRE(context.size() == 0);
+   }
+
+   SCENARIO("fail") {
+      future_context context;
+
+      std::optional<long> value_set;
+      std::optional<status_t> fail_set;
+      promise<long> p1;
+      promise<int> p2;
+      remote_calc  calc;
+      {
+         auto f1 = p1.get_future(context)
+            .fail([&](auto cause) { fail_set = cause; })
+            .then([&](long value) { value_set = value; });
+
+         auto f2 = p2.get_future(context)
+            .then([](int value) { return value + 10; })
+            .then([](int value) -> bool { return value > 20; })
+            .then([&](bool value) -> future<long> {
+               calc.cond = value;
+               return calc.p.get_future(context);
+            })
+            .sink(p1);
+
+         REQUIRE(context.size() == 0);
+      }
+
+      p2.set_value(10);
+      p2.commit();
+
+      REQUIRE_FALSE(value_set);
+      REQUIRE_FALSE(p2.valid());
+
+      calc.on_fail(status_t::out_of_memory);
+      p1.commit();
+
+      REQUIRE_FALSE(value_set.has_value());
+      REQUIRE(fail_set.has_value());
+      REQUIRE(fail_set.value() == status_t::out_of_memory);
 
       REQUIRE(context.size() == 0);
    }

@@ -25,6 +25,13 @@ struct promise_base {
       return future<T>{context, f};
    }
 
+   auto on_fail(status_t cause) noexcept -> void {
+      auto f = future_.lock();
+      if(f) {
+         f->on_fail(cause);
+      }
+   }
+
    auto commit() noexcept -> void {
       auto f = future_.lock();
       if(f) {
@@ -71,9 +78,9 @@ struct promise<void> : promise_base<void> {
 
 template<typename T>
 auto future<T>::sink(promise<T>& p) -> future<void> {
-   return then([=](auto &&value) mutable -> void {
-      p.set_value(std::forward<decltype(value)>(value));
-   });
+   return fail([=](status_t cause) mutable { p.on_fail(cause); })
+         .then([=](auto &&value) mutable -> void {
+            p.set_value(std::forward<decltype(value)>(value)); });
 }
 
 #endif //ASYNC_PROMISE_H
