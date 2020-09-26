@@ -48,6 +48,10 @@ struct future {
       if(object_) object_->launch();
    }
 
+   inline auto valid() const noexcept -> bool {
+      return static_cast<bool>(object_);
+   }
+
    ~future() {
       if(object_ && object_.unique()) {
          context_->register_future(object_);

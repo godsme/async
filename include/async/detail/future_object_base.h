@@ -38,10 +38,14 @@ namespace detail {
       }
 
       auto add_observer(observer_type observer) {
-         observers_.emplace_back(std::move(observer));
+         if(ready_) {
+            notify_observer(observer);
+         } else {
+            observers_.emplace_back(std::move(observer));
+         }
       }
 
-      auto on_promise_done() noexcept -> void {
+      auto commit() noexcept -> void {
          if (ready_ || !present_) return;
          ready_ = true;
          notify_observers();

@@ -33,7 +33,7 @@ namespace detail {
 
       auto on_future_ready(A const &value) noexcept -> void override {
          future_object<R>::set_value(super::f_(value));
-         future_object<R>::on_promise_done();
+         future_object<R>::commit();
       }
    };
 
@@ -47,7 +47,7 @@ namespace detail {
       auto on_future_ready(A const &value) noexcept -> void override {
          super::f_(value);
          future_object<void>::set_value();
-         future_object<void>::on_promise_done();
+         future_object<void>::commit();
       }
    };
 
@@ -60,7 +60,7 @@ namespace detail {
 
       auto on_future_ready() noexcept -> void override {
          future_object<R>::set_value(super::f_());
-         future_object<R>::on_promise_done();
+         future_object<R>::commit();
       }
    };
 
@@ -74,7 +74,7 @@ namespace detail {
       auto on_future_ready() noexcept -> void override {
          super::f_();
          future_object<void>::set_value();
-         future_object<void>::on_promise_done();
+         future_object<void>::commit();
       }
    };
 }

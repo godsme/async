@@ -31,6 +31,10 @@ struct future_registry {
       return futures_.empty();
    }
 
+   auto size() const noexcept -> std::size_t {
+      return futures_.size();
+   }
+
 private:
    std::unordered_set<future_handle> futures_;
 };
