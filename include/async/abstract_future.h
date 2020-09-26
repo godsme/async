@@ -7,6 +7,7 @@
 #define ASYNC_ABSTRACT_FUTURE_H
 
 struct abstract_future {
+   virtual auto on_registered() noexcept -> void = 0;
    virtual ~abstract_future() = default;
 };
 

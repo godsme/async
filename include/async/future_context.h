@@ -14,6 +14,7 @@ struct future_registry {
    using future_handle = std::shared_ptr<abstract_future>;
 
    auto register_future(future_handle future) noexcept -> void {
+      future->on_registered();
       futures_.emplace(std::move(future));
    }
 

@@ -59,6 +59,10 @@ namespace detail {
          }
       }
 
+      auto on_registered() noexcept -> void override {
+         registered = true;
+      }
+
       virtual ~future_object_base() = default;
 
    protected:
