@@ -5,24 +5,24 @@
 #ifndef ASYNC_FUTURE_H
 #define ASYNC_FUTURE_H
 
-#include <async/future_callback_object.h>
+#include <async/detail/future_callback_object.h>
 
 template<typename T>
 struct future {
-   using object_type = std::shared_ptr<future_object<T>>;
+   using object_type = std::shared_ptr<detail::future_object<T>>;
 
    future() noexcept = default;
-   future(object_type object) noexcept
-      : object_{std::move(object)}
+   future(future_context& context, object_type object) noexcept
+      : context_{&context}, object_{std::move(object)}
    {}
 
    template<typename F, typename R = std::invoke_result_t<F, T>>
    auto map(F&& callback) noexcept -> future<R> {
-      if(!object_) return {};
+      if(context_ == nullptr || !object_) return {};
 
-      auto cb = std::make_shared<future_callback_object<R, F, T>>(object_, std::forward<F>(callback));
+      auto cb = std::make_shared<detail::future_callback_object<R, F, T>>(*context_, object_, std::forward<F>(callback));
       if(cb != nullptr) object_->add_observer(cb);
-      return {cb};
+      return {*context_, cb};
    }
 
    auto launch() {
@@ -30,6 +30,7 @@ struct future {
    }
 
 private:
+   future_context* context_{};
    object_type object_;
 };
 

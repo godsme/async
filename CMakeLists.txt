@@ -8,4 +8,4 @@ include_directories(
         "${CMAKE_CURRENT_SOURCE_DIR}/third-party"
 )
 
-add_executable(async main.cpp include/async/future_object.h include/async/future_observer.h include/async/future_callback_object.h include/async/future.h include/async/detail/future_object_base.h)
+add_executable(async main.cpp include/async/detail/future_object.h include/async/detail/future_observer.h include/async/detail/future_callback_object.h include/async/future.h include/async/detail/future_object_base.h include/async/future_context.h include/async/abstract_future.h)
