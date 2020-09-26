@@ -20,13 +20,6 @@ struct future {
    auto map(F&& callback) noexcept -> future<R> {
       if(!object_) return {};
 
-      if constexpr (std::is_same_v<void, R>) {
-         if(!object_->has_callback()) {
-            object_->set_callback(std::move(callback));
-            return {object_};
-         }
-      }
-
       auto cb = std::make_shared<future_callback_object<R, F, T>>(object_, std::forward<F>(callback));
       if(cb != nullptr) object_->add_observer(cb);
       return {cb};
