@@ -51,6 +51,7 @@ namespace detail {
             }
          } else {
             super::set_value(future_->get_value());
+            future_.reset();
             super::commit();
          }
       }

@@ -102,6 +102,10 @@ namespace detail {
          registered = true;
       }
 
+      auto get_context() const noexcept -> future_context* {
+         return &context_;
+      }
+
       virtual ~future_object_base() = default;
 
    protected:

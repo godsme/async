@@ -7,8 +7,9 @@
 
 #include <async/future.h>
 
-template<typename ... Ts>
-auto when_all(future<Ts>& ...) {
+template<typename ... Xs>
+auto when_all(future_context& context, future<Xs>& ... futures) {
+   return future<detail::tuple_trait_t<Xs...>>(context, futures...);
 }
 
 #endif //ASYNC_WHEN_ALL_H
