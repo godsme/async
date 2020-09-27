@@ -11,7 +11,7 @@
 
 namespace detail {
    template<typename R, typename F, typename A>
-   struct future_callback_base : future_object<R>, future_observer<A> {
+   struct future_callback_base : future_object<R>, future_observer {
       using subject_type = std::shared_ptr<future_object<A>>;
       future_callback_base
          ( future_context& context
@@ -19,7 +19,9 @@ namespace detail {
          , F&& f)
             : future_object<R>(context)
             , subject_{std::move(subject)}
-            , f_{std::forward<F>(f)} {}
+            , f_{std::forward<F>(f)} {
+         if(subject_) subject_->add_observer(this);
+      }
 
       using super = future_object <R>;
 
@@ -30,7 +32,7 @@ namespace detail {
 
       auto on_future_fail(status_t cause) noexcept -> void override {
          super::on_fail(cause);
-         commit();
+         do_commit();
       }
 
       ~future_callback_base() {
@@ -38,7 +40,7 @@ namespace detail {
       }
 
    protected:
-      auto commit() noexcept -> void {
+      auto do_commit() noexcept -> void {
          super::commit();
          detach_subject(status_t::ok);
       }

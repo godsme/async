@@ -29,12 +29,6 @@ namespace detail {
       }
 
    private:
-      auto notify_observer(future_observer<T> &observer) noexcept -> void override {
-         if (observer.pass_value()) observer.on_future_ready(get_value());
-         else observer.on_future_ready();
-      }
-
-   private:
       std::aligned_storage_t<sizeof(T), alignof(T)> storage_;
    };
 
@@ -45,11 +39,6 @@ namespace detail {
 
       auto set_value() noexcept -> void {
          present_ = true;
-      }
-
-   private:
-      auto notify_observer(future_observer<void> &observer) noexcept -> void override {
-         observer.on_future_ready();
       }
    };
 }

@@ -32,12 +32,6 @@ namespace detail {
       using subject_type = std::shared_ptr <future_object<A>>;
       using super = future_callback_base<future_trait_t<R>, F, A>;
       using super::super;
-
-   protected:
-      auto destroy() noexcept -> void {
-         super::destroy();
-         super::subject_.reset();
-      }
    };
 
    /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -47,13 +41,29 @@ namespace detail {
       using super = future_proxy_object_base<R, F, A>;
       using super::super;
 
-      auto on_future_ready(A const &value) noexcept -> void override {
-         auto future = super::f_(value);
-         if(future.object_) {
-            super::move_observers(*future.object_);
+      auto on_future_ready() noexcept -> void override {
+         if(!future_) {
+            auto future = super::f_(super::subject_->get_value());
+            if(future.object_) {
+               future_ = future.object_;
+               super::subject_.reset();
+               future_->add_observer(this);
+            }
+         } else {
+            super::set_value(future_->get_value());
+            super::commit();
          }
-         super::destroy();
       }
+
+      auto cancel(status_t cause) noexcept -> void override {
+         if(!future_) {
+            super::cancel(cause);
+         } else {
+            future_->cancel(cause);
+         }
+      }
+
+      typename R::object_type future_;
    };
 
    template<typename R, typename F>
@@ -67,7 +77,13 @@ namespace detail {
          if(future.object_) {
             super::move_observers(*future.object_);
          }
+         destroy();
+      }
+
+   private:
+      auto destroy() noexcept -> void {
          super::destroy();
+         super::detach_subject();
       }
    };
 }

@@ -35,7 +35,6 @@ struct future {
       if(context_ == nullptr || !object_) return {};
 
       auto cb = std::make_shared<detail::future_callback_object<R, F, T>>(*context_, object_, std::forward<F>(callback));
-      if(cb != nullptr) object_->add_observer(cb);
       return {*context_, cb};
    }
 
@@ -44,7 +43,6 @@ struct future {
       if(context_ == nullptr || !object_) return {};
 
       auto cb = std::make_shared<detail::future_proxy_object<R, F, T>>(*context_, object_, std::forward<F>(callback));
-      if(cb != nullptr) object_->add_observer(cb);
       return R{*context_, cb};
    }
 

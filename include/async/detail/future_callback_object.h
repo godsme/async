@@ -20,9 +20,9 @@ namespace detail {
       using super = future_callback_base<R, F, A>;
       using super::super;
 
-      auto on_future_ready(A const &value) noexcept -> void override {
-         future_object<R>::set_value(super::f_(value));
-         super::commit();
+      auto on_future_ready() noexcept -> void override {
+         super::set_value(super::f_(super::subject_->get_value()));
+         super::do_commit();
       }
    };
 
@@ -33,10 +33,10 @@ namespace detail {
       using super = future_callback_base<void, F, A>;
       using super::super;
 
-      auto on_future_ready(A const &value) noexcept -> void override {
-         super::f_(value);
-         future_object<void>::set_value();
-         super::commit();
+      auto on_future_ready() noexcept -> void override {
+         super::f_(super::subject_->get_value());
+         super::set_value();
+         super::do_commit();
       }
    };
 
@@ -49,7 +49,7 @@ namespace detail {
 
       auto on_future_ready() noexcept -> void override {
          future_object<R>::set_value(super::f_());
-         super::commit();
+         super::do_commit();
       }
    };
 
@@ -63,7 +63,7 @@ namespace detail {
       auto on_future_ready() noexcept -> void override {
          super::f_();
          future_object<void>::set_value();
-         super::commit();
+         super::do_commit();
       }
    };
 }

@@ -28,7 +28,7 @@ namespace detail {
    template<typename T>
    struct future_object_base : abstract_future {
       using callback_type = typename future_callback_trait<T>::type;
-      using observer_type = std::weak_ptr<future_observer<T>>;
+      using observer_type = future_observer*;
 
       explicit future_object_base(future_context& context) : context_{context} {}
 
@@ -74,11 +74,8 @@ namespace detail {
          do_cancel(cause);
       }
 
-      auto deregister_observer(future_observer<T>* observer, status_t cause) noexcept -> void {
-         auto result = std::find_if(observers_.begin(), observers_.end(), [=](auto&& elem) {
-            auto o = elem.lock();
-            return (o && o.get() == observer);
-         });
+      auto deregister_observer(future_observer* observer, status_t cause) noexcept -> void {
+         auto result = std::find(observers_.begin(), observers_.end(), observer);
          if(result != observers_.end()) {
             observers_.erase(result);
             if(observers_.empty()) {
@@ -134,19 +131,13 @@ namespace detail {
       }
 
       auto cancel_observer(observer_type &observer, status_t cause) noexcept -> void {
-         auto o = observer.lock();
-         if (o) o->on_future_fail(cause);
+         observer->on_future_fail(cause);
       }
 
       auto notify_observer_(observer_type &observer) noexcept -> void {
-         auto o = observer.lock();
-         if (o) {
-            if(present_) notify_observer(*o);
-            else o->on_future_fail(failure_);
-         }
+         if(present_) observer->on_future_ready();
+         else observer->on_future_fail(failure_);
       }
-
-      virtual auto notify_observer(future_observer<T> &) noexcept -> void = 0;
 
    private:
       future_context& context_;
