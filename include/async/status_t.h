@@ -11,7 +11,8 @@ enum status_t : uint64_t {
    ok,
    failed,
    invalid_data,
-   out_of_memory
+   out_of_memory,
+   cancelled
 };
 
 #endif //ASYNC_STATUS_T_H

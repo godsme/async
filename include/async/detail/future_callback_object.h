@@ -5,7 +5,7 @@
 #ifndef ASYNC_FUTURE_CALLBACK_OBJECT_H
 #define ASYNC_FUTURE_CALLBACK_OBJECT_H
 
-#include <async/detail/future_observer.h>
+#include <async/detail/future_callback_base.h>
 #include <async/detail/future_object.h>
 #include <async/failure_handler.h>
 
@@ -15,33 +15,9 @@ namespace detail {
 
    /////////////////////////////////////////////////////////////////////////////////////////////////
    template<typename R, typename F, typename A>
-   struct future_callback_object_base : future_object<R>, future_observer<A> {
-      using subject_type = std::shared_ptr<future_object<A>>;
-      future_callback_object_base(future_context& context, subject_type subject, F &&f)
-         : future_object<R>(context), subject_{std::move(subject)}, f_{std::forward<F>(f)} {}
-
-      using super = future_object<R>;
-
-      auto on_future_fail(status_t cause) noexcept -> void override {
-         future_object<R>::on_fail(cause);
-         commit();
-      }
-
-   protected:
-      auto commit() noexcept -> void {
-         future_object<R>::commit();
-         subject_.reset();
-      }
-   protected:
-      std::decay_t<F> f_;
-      subject_type subject_;
-   };
-
-   /////////////////////////////////////////////////////////////////////////////////////////////////
-   template<typename R, typename F, typename A>
    struct future_callback_object<R, F, A, std::enable_if_t<std::is_invocable_r_v<R, std::decay_t<F>, A const &>>>
-      : future_callback_object_base<R, F, A> {
-      using super = future_callback_object_base<R, F, A>;
+      : future_callback_base<R, F, A> {
+      using super = future_callback_base<R, F, A>;
       using super::super;
 
       auto on_future_ready(A const &value) noexcept -> void override {
@@ -53,8 +29,8 @@ namespace detail {
    /////////////////////////////////////////////////////////////////////////////////////////////////
    template<typename F, typename A>
    struct future_callback_object<void, F, A, std::enable_if_t<std::is_invocable_r_v<void, std::decay_t<F>, A const &>>>
-      : future_callback_object_base<void, F, A> {
-      using super = future_callback_object_base<void, F, A>;
+      : future_callback_base<void, F, A> {
+      using super = future_callback_base<void, F, A>;
       using super::super;
 
       auto on_future_ready(A const &value) noexcept -> void override {
@@ -67,8 +43,8 @@ namespace detail {
    /////////////////////////////////////////////////////////////////////////////////////////////////
    template<typename R, typename F>
    struct future_callback_object<R, F, void, std::enable_if_t<std::is_invocable_r_v<R, std::decay_t<F>>>>
-      : future_callback_object_base<R, F, void> {
-      using super = future_callback_object_base<R, F, void>;
+      : future_callback_base<R, F, void> {
+      using super = future_callback_base<R, F, void>;
       using super::super;
 
       auto on_future_ready() noexcept -> void override {
@@ -80,8 +56,8 @@ namespace detail {
    /////////////////////////////////////////////////////////////////////////////////////////////////
    template<typename F>
    struct future_callback_object<void, F, void, std::enable_if_t<std::is_invocable_r_v<void, std::decay_t<F>>>>
-      : future_callback_object_base<void, F, void> {
-      using super = future_callback_object_base<void, F, void>;
+      : future_callback_base<void, F, void> {
+      using super = future_callback_base<void, F, void>;
       using super::super;
 
       auto on_future_ready() noexcept -> void override {

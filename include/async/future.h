@@ -7,7 +7,7 @@
 
 #include <async/detail/future_callback_object.h>
 #include <async/detail/future_proxy_object.h>
-#include "status_t.h"
+#include <async/status_t.h>
 
 template<typename T>
 struct future;
@@ -58,14 +58,21 @@ struct future {
       return *this;
    }
 
-   auto sink(promise<T>& p) -> future<void>;
+   auto cancel(status_t cause) noexcept -> void {
+      if(object_) {
+         object_->cancel(cause);
+         object_.reset();
+      }
+   }
+
+   auto sink(promise<T>& p) noexcept -> future<void>;
 
    inline auto valid() const noexcept -> bool {
       return static_cast<bool>(object_);
    }
 
-   ~future() {
-      if(object_ && object_.unique()) {
+   ~future() noexcept {
+      if(object_ && object_.unique() && !object_->ready()) {
          context_->register_future(object_);
       }
    }

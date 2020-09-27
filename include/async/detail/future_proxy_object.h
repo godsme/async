@@ -28,28 +28,16 @@ namespace detail {
 
    /////////////////////////////////////////////////////////////////////////////////////////////////
    template<typename R, typename F, typename A>
-   struct future_proxy_object_base : future_object<future_trait_t<R>>, future_observer<A> {
+   struct future_proxy_object_base : future_callback_base<future_trait_t<R>, F, A> {
       using subject_type = std::shared_ptr <future_object<A>>;
-      using super = future_object<future_trait_t<R>>;
-
-      future_proxy_object_base(future_context &context, subject_type subject, F &&f)
-         : super(context), subject_{std::move(subject)}, f_{std::forward<F>(f)} {}
-
-      auto on_future_fail(status_t cause) noexcept -> void override {
-         super::on_fail(cause);
-         super::commit();
-         subject_.reset();
-      }
+      using super = future_callback_base<future_trait_t<R>, F, A>;
+      using super::super;
 
    protected:
       auto destroy() noexcept -> void {
          super::destroy();
-         subject_.reset();
+         super::subject_.reset();
       }
-
-   protected:
-      std::decay_t <F> f_;
-      subject_type subject_;
    };
 
    /////////////////////////////////////////////////////////////////////////////////////////////////

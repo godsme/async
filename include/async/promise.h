@@ -8,6 +8,7 @@
 #include <memory>
 #include <async/detail/future_object.h>
 #include <async/future.h>
+#include <iostream>
 
 template<typename T>
 struct promise_base {
@@ -15,7 +16,7 @@ struct promise_base {
       return !future_.expired();
    }
 
-   auto get_future(future_context& context) -> future<T> {
+   auto get_future(future_context& context) noexcept -> future<T> {
       auto f = future_.lock();
       if(f == nullptr) {
          f = std::make_shared<detail::future_object<T>>(context);
@@ -27,16 +28,12 @@ struct promise_base {
 
    auto on_fail(status_t cause) noexcept -> void {
       auto f = future_.lock();
-      if(f) {
-         f->on_fail(cause);
-      }
+      if(f) f->on_fail(cause);
    }
 
    auto commit() noexcept -> void {
       auto f = future_.lock();
-      if(f) {
-         f->commit();
-      }
+      if(f) f->commit();
    }
 
 protected:
@@ -48,7 +45,7 @@ struct promise : promise_base<T> {
    using super = promise_base<T>;
 
    template<typename V, typename = std::enable_if_t<std::is_convertible_v<std::decay_t<V>, T>>>
-   auto set_value(V&& value) -> void {
+   auto set_value(V&& value) noexcept -> void {
       auto future = super::future_.lock();
       if(future) {
          future->set_value(std::forward<V>(value));
@@ -77,10 +74,9 @@ struct promise<void> : promise_base<void> {
 };
 
 template<typename T>
-auto future<T>::sink(promise<T>& p) -> future<void> {
-   return fail([=](status_t cause) mutable { p.on_fail(cause); })
-         .then([=](auto &&value) mutable -> void {
-            p.set_value(std::forward<decltype(value)>(value)); });
+auto future<T>::sink(promise<T>& p) noexcept -> future<void> {
+   return then([=](auto &&value) mutable -> void { p.set_value(std::forward<decltype(value)>(value)); })
+         .fail([=](status_t cause) mutable { p.on_fail(cause); });
 }
 
 #endif //ASYNC_PROMISE_H

@@ -7,12 +7,12 @@
 
 #include <async/detail/future_observer.h>
 #include <async/abstract_future.h>
-#include <functional>
-#include <deque>
-#include <memory>
 #include <async/future_context.h>
 #include <async/status_t.h>
 #include <async/failure_handler.h>
+#include <functional>
+#include <list>
+#include <memory>
 
 namespace detail {
    template<typename T>
@@ -70,14 +70,27 @@ namespace detail {
          destroy();
       }
 
+      virtual auto cancel(status_t cause) noexcept -> void {
+         do_cancel(cause);
+      }
+
+      auto deregister_observer(future_observer<T>* observer, status_t cause) noexcept -> void {
+         observers_.erase(std::remove_if(observers_.begin(), observers_.end(), [=](auto&& elem) {
+            auto o = elem.lock();
+            return (o && o.get() == observer);
+         }));
+
+         if(observers_.empty()) {
+            cancel(cause);
+         }
+      }
+
       auto on_fail(status_t cause) noexcept -> void {
          if (present_ || ready_) return;
          failure_ = cause;
       }
 
       auto ready() const noexcept -> bool { return ready_; }
-
-      auto launch() {}
 
       auto destroy() noexcept -> void {
          if(registered) {
@@ -93,6 +106,13 @@ namespace detail {
       virtual ~future_object_base() = default;
 
    protected:
+      auto cancel_observers(status_t cause) {
+         for (auto &observer: observers_) {
+            cancel_observer(observer, cause);
+         }
+         observers_.clear();
+      }
+
       auto notify_observers() {
          for (auto &observer: observers_) {
             notify_observer_(observer);
@@ -101,6 +121,21 @@ namespace detail {
       }
 
    private:
+      auto do_cancel(status_t cause) noexcept -> void {
+         if(ready_) return;
+         ready_ = true;
+         if(f_on_fail_) {
+            f_on_fail_(cause);
+         }
+         cancel_observers(cause);
+         destroy();
+      }
+
+      auto cancel_observer(observer_type &observer, status_t cause) noexcept -> void {
+         auto o = observer.lock();
+         if (o) o->on_future_fail(cause);
+      }
+
       auto notify_observer_(observer_type &observer) noexcept -> void {
          auto o = observer.lock();
          if (o) {
@@ -113,7 +148,7 @@ namespace detail {
 
    private:
       future_context& context_;
-      std::deque<observer_type> observers_;
+      std::list<observer_type> observers_;
       status_t failure_{};
       failure_handler f_on_fail_;
 
