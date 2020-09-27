@@ -33,6 +33,10 @@ namespace detail {
          commit();
       }
 
+      ~future_callback_base() {
+         detach_subject(status_t::ok);
+      }
+
    protected:
       auto commit() noexcept -> void {
          super::commit();
@@ -40,9 +44,12 @@ namespace detail {
       }
 
       auto detach_subject(status_t cause) noexcept -> void {
-         if(subject_) subject_->deregister_observer(this, cause);
-         subject_.reset();
+         if(subject_) {
+            subject_->deregister_observer(this, cause);
+            subject_.reset();
+         }
       }
+
    protected:
       std::decay_t<F> f_;
       subject_type subject_;
