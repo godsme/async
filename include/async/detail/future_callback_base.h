@@ -24,9 +24,8 @@ namespace detail {
       using super = future_object <R>;
 
       auto cancel(status_t cause) noexcept -> void override {
-         subject_->deregister_observer(this, cause);
          super::cancel(cause);
-         subject_.reset();
+         detach_subject(cause);
       }
 
       auto on_future_fail(status_t cause) noexcept -> void override {
@@ -37,9 +36,13 @@ namespace detail {
    protected:
       auto commit() noexcept -> void {
          super::commit();
-         subject_.reset();
+         detach_subject(status_t::ok);
       }
 
+      auto detach_subject(status_t cause) noexcept -> void {
+         if(subject_) subject_->deregister_observer(this, cause);
+         subject_.reset();
+      }
    protected:
       std::decay_t<F> f_;
       subject_type subject_;

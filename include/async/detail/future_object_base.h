@@ -11,7 +11,7 @@
 #include <async/status_t.h>
 #include <async/failure_handler.h>
 #include <functional>
-#include <list>
+#include <deque>
 #include <memory>
 
 namespace detail {
@@ -75,13 +75,15 @@ namespace detail {
       }
 
       auto deregister_observer(future_observer<T>* observer, status_t cause) noexcept -> void {
-         observers_.erase(std::remove_if(observers_.begin(), observers_.end(), [=](auto&& elem) {
+         auto result = std::find_if(observers_.begin(), observers_.end(), [=](auto&& elem) {
             auto o = elem.lock();
             return (o && o.get() == observer);
-         }));
-
-         if(observers_.empty()) {
-            cancel(cause);
+         });
+         if(result != observers_.end()) {
+            observers_.erase(result);
+            if(observers_.empty()) {
+               cancel(cause);
+            }
          }
       }
 
@@ -148,7 +150,7 @@ namespace detail {
 
    private:
       future_context& context_;
-      std::list<observer_type> observers_;
+      std::deque<observer_type> observers_;
       status_t failure_{};
       failure_handler f_on_fail_;
 
