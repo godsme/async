@@ -183,7 +183,7 @@ namespace {
       remote_calc  calc;
       {
          auto f1 = p1.get_future(context)
-            .then([&](long value) {  })
+            .then([&](long value) { return value; })
             .fail([&](auto cause) {
                REQUIRE_FALSE(fail_set);
                fail_set = cause; });
@@ -195,8 +195,8 @@ namespace {
                calc.cond = value;
                return calc.p.get_future(context); });
 
-         auto f3 = when_all(context, f1, f2).then([&](long value){
-            value_set = value;
+         auto f3 = when_all(context, f1, f2).then([&](auto v1, long v2){
+            value_set = v1 + v2;
          });
       }
 
@@ -207,6 +207,6 @@ namespace {
       calc.set_value(30);
 
       REQUIRE(value_set.has_value());
-      REQUIRE(value_set.value() == 40);
+      REQUIRE(value_set.value() == 50);
    }
 }

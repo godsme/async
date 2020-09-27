@@ -67,7 +67,7 @@ namespace detail {
 
       template<std::size_t ... I>
       auto on_done(std::index_sequence<I...>) {
-         super::set_value(std::make_tuple((std::get<I>(objects_)->get_value(), ...)));
+         super::set_value(std::make_tuple(std::get<I>(objects_)->get_value() ...));
          super::commit();
       }
 
