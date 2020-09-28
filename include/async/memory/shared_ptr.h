@@ -9,6 +9,9 @@
 #include <type_traits>
 
 template<typename T>
+struct weak_ptr;
+
+template<typename T>
 struct shared_ptr : private intrusive_ptr<shared_ptr_ctrl_block> {
    using super = intrusive_ptr<shared_ptr_ctrl_block>;
 
@@ -57,7 +60,6 @@ struct shared_ptr : private intrusive_ptr<shared_ptr_ctrl_block> {
    using super::operator bool;
    using super::release;
 
-
    inline friend auto operator==(const shared_ptr& x, std::nullptr_t) noexcept -> bool {
       return !x;
    }
@@ -97,6 +99,10 @@ struct shared_ptr : private intrusive_ptr<shared_ptr_ctrl_block> {
    inline friend auto operator!=(const shared_ptr& x, const shared_ptr& y) noexcept -> bool {
       return x.ptr_ != y.ptr_;
    }
+
+private:
+   template<typename>
+   friend struct weak_ptr;
 };
 
 template<typename T, typename ... Args>

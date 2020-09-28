@@ -5,7 +5,6 @@
 #ifndef ASYNC_PAGE_ALLOCATOR_H
 #define ASYNC_PAGE_ALLOCATOR_H
 
-
 #include <cstddef>
 #include <memory>
 #include <deque>
@@ -27,7 +26,6 @@ struct alignas(PAGE_ALIGNMENT) page {
    auto alloc(std::size_t size, std::align_val_t alignment) noexcept -> void* {
       auto p = std::align(size, static_cast<std::size_t>(alignment), p_free, size_of_free_block_);
       if(p == nullptr) return p;
-      std::cout << "alloc " << size << ", align " << (std::size_t)alignment << std::endl;
       p_free = (char*)p_free + size;
       size_of_free_block_ -= size;
       actual_allocated_size_ += size;
@@ -39,7 +37,6 @@ struct alignas(PAGE_ALIGNMENT) page {
    }
 
    auto free(std::size_t size) noexcept -> bool {
-      std::cout << "free " << size << std::endl;
       actual_allocated_size_ -= size;
       return actual_allocated_size_ == 0;
    }
@@ -63,7 +60,7 @@ struct page_allocator {
       if(result == pages_.end()) {
          ::operator delete(p);
       } else if((*result)->free(size)) {
-         std::cout << "page free " << size << std::endl;
+         std::cout << "page free" << std::endl;
          pages_.erase(result);
       }
    }
@@ -73,6 +70,7 @@ private:
       auto new_page = new (std::nothrow) page{};
       if(new_page == nullptr) return nullptr;
       pages_.emplace_back(new_page);
+      std::cout << "page alloc" << std::endl;
       return new_page;
    }
 
