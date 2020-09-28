@@ -116,7 +116,7 @@ namespace {
                fail_set = cause; });
 
          auto f2 = p2.get_future(context)
-            .then([](int value) -> int { return value + 10; })
+            .then([](int value) -> int  { return value + 10; })
             .then([](int value) -> bool { return value > 20; })
             .then([&](bool value) -> future<long> {
                calc.cond = value;
@@ -204,7 +204,7 @@ namespace {
       }
 
       REQUIRE(context.size() == 1);
-      
+
       p1.set_value(10);
       p1.commit();
       p2.set_value(20);
