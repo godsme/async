@@ -3,7 +3,7 @@
 //
 
 #include <catch.hpp>
-#include <async/memory/shared_ptr.h>
+#include <async/memory/make_shared.h>
 #include <async/memory/weak_ptr.h>
 
 namespace {
@@ -15,15 +15,15 @@ namespace {
 
    SCENARIO("make shared") {
       page_allocator allocator;
-      auto p1 = make_shared<int>(allocator, 20);
+      auto p1 = alloc_shared<int>(allocator, 20);
       REQUIRE(p1 != nullptr);
       REQUIRE(*p1 == 20);
 
-      auto p2 = make_shared<long long>(allocator, 10);
+      auto p2 = alloc_shared<long long>(allocator, 10);
       REQUIRE(p2 != nullptr);
       REQUIRE(*p2 == 10);
 
-      auto p3 = make_shared<object>(allocator, 10, 4.9, 'a');
+      auto p3 = alloc_shared<object>(allocator, 10, 4.9, 'a');
       REQUIRE(p3 != nullptr);
       REQUIRE(p3->a == 10);
       REQUIRE(p3->b == 4.9);
@@ -45,12 +45,12 @@ namespace {
       REQUIRE(wp.expired());
 
       page_allocator allocator;
-      weak_ptr<int> wp1 = make_shared<int>(allocator, 20);
+      weak_ptr<int> wp1 = alloc_shared<int>(allocator, 20);
       auto p1 = wp1.lock();
       REQUIRE_FALSE(p1);
       REQUIRE(wp1.expired());
 
-      auto p2 = make_shared<object>(allocator, 10, 4.9, 'a');
+      auto p2 = alloc_shared<object>(allocator, 10, 4.9, 'a');
       weak_ptr<object> wp2 = p2;
       auto p3 = wp2.lock();
       REQUIRE(p2);
@@ -64,7 +64,7 @@ namespace {
 
       shared_ptr<object> sps[100000];
       for(int i=0; i<100000; i++) {
-         sps[i] = make_shared<object>(allocator, 10, 4.9, 'a');
+         sps[i] = alloc_shared<object>(allocator, 10, 4.9, 'a');
          weak_ptr<object> wp = sps[i];
          REQUIRE(sps[i].use_count() == 1);
          auto p3 = wp.lock();

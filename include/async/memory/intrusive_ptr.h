@@ -9,6 +9,16 @@
 #include <algorithm>
 
 template<typename T>
+struct intrusive_ptr;
+
+struct shared_ptr_ctrl_block;
+auto intrusive_ptr_add_weak_ref(shared_ptr_ctrl_block* x) noexcept -> void;
+auto intrusive_ptr_add_ref(shared_ptr_ctrl_block* x) noexcept -> void;
+auto intrusive_ptr_release_weak(shared_ptr_ctrl_block* x) noexcept -> void;
+auto intrusive_ptr_release(shared_ptr_ctrl_block* x) noexcept -> void;
+auto intrusive_ptr_upgrade_weak(shared_ptr_ctrl_block* x) noexcept -> intrusive_ptr<shared_ptr_ctrl_block>;
+
+template<typename T>
 struct intrusive_ptr {
    intrusive_ptr() noexcept = default;
    intrusive_ptr(T* ptr, bool add_ref = true) noexcept
@@ -29,7 +39,7 @@ struct intrusive_ptr {
    ~intrusive_ptr() noexcept { release(); }
 
    auto operator=(intrusive_ptr const& other) noexcept -> intrusive_ptr& {
-      if(ptr_) intrusive_ptr_release_ref(ptr_);
+      release();
       ptr_ = other.ptr_;
       if(ptr_) intrusive_ptr_add_ref(ptr_);
       return *this;
@@ -97,6 +107,10 @@ struct intrusive_ptr {
 
    inline friend auto operator!=(const intrusive_ptr& x, const intrusive_ptr& y) noexcept -> bool {
       return x.ptr_ != y.ptr_;
+   }
+
+   inline friend auto operator<(intrusive_ptr const& x, intrusive_ptr const& y) noexcept -> bool {
+      return x.ptr_ < y.ptr_;
    }
 
 private:

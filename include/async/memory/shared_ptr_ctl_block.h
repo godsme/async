@@ -8,7 +8,7 @@
 #include <atomic>
 #include <cstddef>
 #include <async/memory/intrusive_ptr.h>
-#include <async/page_allocator.h>
+#include <async/memory/page_allocator.h>
 
 struct page_allocator;
 

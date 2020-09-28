@@ -5,10 +5,9 @@
 #ifndef ASYNC_PROMISE_H
 #define ASYNC_PROMISE_H
 
-#include <memory>
 #include <async/detail/future_object.h>
 #include <async/future.h>
-#include <iostream>
+#include <async/memory/weak_ptr.h>
 
 template<typename T>
 struct promise_base {
@@ -19,7 +18,7 @@ struct promise_base {
    auto get_future(future_context& context) noexcept -> future<T> {
       auto f = future_.lock();
       if(f == nullptr) {
-         f = std::make_shared<detail::future_object<T>>(context);
+         f = make_shared<detail::future_object<T>>(context);
          future_ = f;
       }
 
@@ -37,7 +36,7 @@ struct promise_base {
    }
 
 protected:
-   std::weak_ptr<detail::future_object<T>> future_;
+   weak_ptr<detail::future_object<T>> future_;
 };
 
 template<typename T>

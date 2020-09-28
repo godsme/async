@@ -8,6 +8,7 @@
 #include <async/when_all.h>
 
 namespace {
+
    SCENARIO("auto registry") {
       future_context context;
       promise<int> p;
@@ -64,8 +65,6 @@ namespace {
       std::optional<long> value_set;
 
       promise<long> p1;
-
-
       promise<int> p2;
       remote_calc  calc;
       {
@@ -82,7 +81,10 @@ namespace {
             .sink(p1);
 
          REQUIRE(context.size() == 0);
+         REQUIRE(p1.valid());
       }
+      REQUIRE(context.size() == 2);
+      REQUIRE(p1.valid());
 
       p2.set_value(10);
       p2.commit();

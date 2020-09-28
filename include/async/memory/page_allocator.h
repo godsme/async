@@ -70,7 +70,7 @@ private:
       auto new_page = new (std::nothrow) page{};
       if(new_page == nullptr) return nullptr;
       pages_.emplace_back(new_page);
-      std::cout << "page alloc" << std::endl;
+      std::cout << "page alloc: " << new_page << std::endl;
       return new_page;
    }
 

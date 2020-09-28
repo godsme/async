@@ -115,7 +115,7 @@ namespace detail {
 
       template<std::size_t ... I>
       auto clear(std::index_sequence<I...>) {
-         (std::get<I>(objects_).reset(), ...);
+         (std::get<I>(objects_).release(), ...);
       }
 
       template<std::size_t ... I>
@@ -125,7 +125,7 @@ namespace detail {
       }
 
    private:
-      std::tuple<std::shared_ptr<future_object<Xs>>...> objects_;
+      std::tuple<shared_ptr<future_object<Xs>>...> objects_;
       std::size_t num_of_pending_{0};
       bool valid_{true};
    };

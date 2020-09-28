@@ -29,7 +29,7 @@ namespace detail {
    /////////////////////////////////////////////////////////////////////////////////////////////////
    template<typename R, typename F, typename A>
    struct future_proxy_object_base : future_callback_base<future_trait_t<R>, F, A> {
-      using subject_type = std::shared_ptr <future_object<A>>;
+      using subject_type = shared_ptr <future_object<A>>;
       using super = future_callback_base<future_trait_t<R>, F, A>;
       using super::super;
    };
@@ -46,12 +46,12 @@ namespace detail {
             auto future = super::f_(super::subject_->get_value());
             if(future.object_) {
                future_ = future.object_;
-               super::subject_.reset();
+               super::subject_.release();
                future_->add_observer(this);
             }
          } else {
             super::set_value(future_->get_value());
-            future_.reset();
+            future_.release();
             super::commit();
          }
       }

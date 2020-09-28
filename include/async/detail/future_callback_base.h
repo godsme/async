@@ -8,11 +8,12 @@
 #include <async/detail/future_observer.h>
 #include <async/detail/future_object.h>
 #include <async/failure_handler.h>
+#include <async/memory/shared_ptr.h>
 
 namespace detail {
    template<typename R, typename F, typename A>
    struct future_callback_base : future_object<R>, future_observer {
-      using subject_type = std::shared_ptr<future_object<A>>;
+      using subject_type = shared_ptr<future_object<A>>;
       future_callback_base
          ( future_context& context
          , subject_type subject
@@ -48,7 +49,7 @@ namespace detail {
       auto detach_subject(status_t cause) noexcept -> void {
          if(subject_) {
             subject_->deregister_observer(this, cause);
-            subject_.reset();
+            subject_.release();
          }
       }
 

@@ -6,7 +6,7 @@
 #define ASYNC_SHARED_PTR_OBJ_STORAGE_H
 
 #include <utility>
-#include <async/page_allocator.h>
+#include <async/memory/page_allocator.h>
 #include "shared_ptr_ctl_block.h"
 #include "shared_ptr.h"
 

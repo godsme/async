@@ -11,7 +11,7 @@ template<typename T>
 struct weak_ptr {
    weak_ptr() = default;
    weak_ptr(shared_ptr<T> const& p)
-      : ptr_{const_cast<shared_ptr_ctrl_block*>(p.raw())} { add_ref(); }
+      : ptr_{const_cast<shared_ptr_ctrl_block*>(p.ptr_.raw())} { add_ref(); }
 
    template<typename R, typename = std::enable_if_t<std::is_base_of_v<T, R>>>
    weak_ptr(weak_ptr<R> const& rhs) noexcept : ptr_{rhs.ptr_} { add_ref(); }

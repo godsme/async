@@ -9,6 +9,7 @@
 #include <async/detail/future_proxy_object.h>
 #include <async/detail/when_all_object.h>
 #include <async/status_t.h>
+#include <async/memory/make_shared.h>
 
 template<typename T>
 struct future;
@@ -47,7 +48,7 @@ struct future;
 
 template<typename T>
 struct future final {
-   using object_type = std::shared_ptr<detail::future_object<T>>;
+   using object_type = shared_ptr<detail::future_object<T>>;
 
    future() noexcept = default;
    future(future_context& context, object_type object) noexcept
@@ -57,7 +58,7 @@ struct future final {
    template<typename ... Ys, typename = std::enable_if_t<(sizeof...(Ys) > 1)>>
    future(future_context& context, future<Ys>& ... futures) noexcept
       : context_{&context} {
-      auto obj = std::make_shared<detail::when_all_object<Ys...>>(context, futures ...);
+      auto obj = make_shared<detail::when_all_object<Ys...>>(context, futures ...);
       if(obj != nullptr && obj->valid()) {
          obj->check_done();
          object_ = obj;
@@ -68,7 +69,7 @@ struct future final {
    auto then(F&& callback) noexcept -> future<R> {
       if(context_ == nullptr || !object_) return {};
 
-      auto cb = std::make_shared<detail::future_callback_object<R, F, T>>(*context_, object_, std::forward<F>(callback));
+      auto cb = make_shared<detail::future_callback_object<R, F, T>>(*context_, object_, std::forward<F>(callback));
       return {*context_, cb};
    }
 
@@ -77,8 +78,7 @@ struct future final {
       if(context_ == nullptr || !object_) return {};
 
       auto nf = [=](auto && value) mutable -> R { return std::apply(f, value); };
-      auto cb = std::make_shared<detail::future_callback_object<R, decltype(nf), T>>(*context_, object_,
-                                                                                     std::move(nf));
+      auto cb = make_shared<detail::future_callback_object<R, decltype(nf), T>>(*context_, object_, std::move(nf));
 
       return future<R>{*context_, cb};
    }
@@ -87,7 +87,7 @@ struct future final {
    auto then(F&& callback) noexcept -> R {
       if(context_ == nullptr || !object_) return {};
 
-      auto cb = std::make_shared<detail::future_proxy_object<R, F, T>>(*context_, object_, std::forward<F>(callback));
+      auto cb = make_shared<detail::future_proxy_object<R, F, T>>(*context_, object_, std::forward<F>(callback));
       return R{*context_, cb};
    }
 
@@ -104,7 +104,7 @@ struct future final {
    auto cancel(status_t cause) noexcept -> void {
       if(object_) {
          object_->cancel(cause);
-         object_.reset();
+         object_.release();
       }
    }
 

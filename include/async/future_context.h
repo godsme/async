@@ -6,12 +6,13 @@
 #define ASYNC_ACTOR_FUTURE_CONTEXT_H
 
 #include <async/abstract_future.h>
-#include <unordered_set>
-#include <memory>
+#include <set>
 #include <algorithm>
+#include <async/memory/page_allocator.h>
+#include <async/memory/shared_ptr.h>
 
 struct future_registry {
-   using future_handle = std::shared_ptr<abstract_future>;
+   using future_handle = shared_ptr<abstract_future>;
 
    auto register_future(future_handle future) noexcept -> void {
       future->on_registered();
@@ -36,10 +37,10 @@ struct future_registry {
    }
 
 private:
-   std::unordered_set<future_handle> futures_;
+   std::set<future_handle> futures_{};
 };
 
-struct future_context : future_registry {
+struct future_context : page_allocator, future_registry {
 
 };
 
