@@ -175,6 +175,48 @@ namespace {
       REQUIRE(context.size() == 0);
    }
 
+   SCENARIO("void future") {
+      future_context context;
+
+      std::optional<long> value_set;
+      std::optional<status_t> fail_set;
+      promise<long> p1;
+      promise<int> p2;
+      remote_calc  calc;
+      {
+         auto f1 = p1.get_future(context)
+            .then([&](long value) { return value; });
+
+         auto f2 = p2.get_future(context)
+            .then([](int value) -> void { })
+            .then([] { return true; })
+            .then([&](bool value) -> future<long> {
+               calc.cond = value;
+               return calc.p.get_future(context); });
+
+         auto f3 = when_all(context, f1, f2).then([&](auto v1, long v2){
+            return v1 + v2;
+         });
+
+         auto f4 = when_all(context, f1, f2, f3).then([&](auto v1, auto v2, auto v3){
+            value_set = v1 + v2 + v3;
+         });
+
+         REQUIRE(context.size() == 0);
+      }
+
+      REQUIRE(context.size() == 1);
+
+      p1.set_value(10);
+      p1.commit();
+      p2.set_value(20);
+      p2.commit();
+      calc.set_value(30);
+
+      REQUIRE(value_set.has_value());
+      REQUIRE(value_set.value() == 100);
+   }
+
    SCENARIO("when_all") {
       future_context context;
 

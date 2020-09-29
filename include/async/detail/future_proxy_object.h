@@ -35,24 +35,14 @@ namespace detail {
 
       auto on_future_ready() noexcept -> void override {
          if(!future_) {
-            R future;
-            if constexpr (std::is_void_v<A>) {
-               future = super::f_();
-            } else {
-               future = super::f_(super::subject_->get_value());
-            }
-
+            auto future = get_future();
             if(future.object_) {
                future_ = future.object_;
                super::subject_.release();
                future_->add_observer(this);
             }
          } else {
-            if constexpr (std::is_void_v<future_trait_t<R>>) {
-               super::set_value();
-            } else {
-               super::set_value(future_->get_value());
-            }
+            on_future_ready_();
             future_.release();
             super::commit();
          }
@@ -63,6 +53,23 @@ namespace detail {
             super::cancel(cause);
          } else {
             future_->cancel(cause);
+         }
+      }
+
+   private:
+      auto get_future() noexcept {
+         if constexpr (std::is_void_v<A>) {
+            return super::f_();
+         } else {
+            return super::f_(super::subject_->get_value());
+         }
+      }
+
+      auto on_future_ready_() noexcept -> void {
+         if constexpr (std::is_void_v<future_trait_t<R>>) {
+            super::set_value();
+         } else {
+            super::set_value(future_->get_value());
          }
       }
 

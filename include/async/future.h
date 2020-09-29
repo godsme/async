@@ -65,11 +65,19 @@ struct future final {
       }
    };
 
-   template<typename F, typename R = std::invoke_result_t<F, T>, typename = std::enable_if_t<!Is_Future<R>>>
+   template<typename F, typename R = std::invoke_result_t<F, T>, typename = std::enable_if_t<!std::is_void_v<T> && !Is_Future<R>>>
    auto then(F&& callback) noexcept -> future<R> {
       if(context_ == nullptr || !object_) return {};
 
       auto cb = make_shared<detail::future_callback_object<R, F, T>>(*context_, object_, std::forward<F>(callback));
+      return {*context_, cb};
+   }
+
+   template<typename F, typename R = std::invoke_result_t<F>, typename = std::enable_if_t<std::is_void_v<T> && !Is_Future<R>>>
+   auto then(F&& callback) noexcept -> future<std::invoke_result_t<F>> {
+      if(context_ == nullptr || !object_) return {};
+
+      auto cb = make_shared<detail::future_callback_object<R, F, void>>(*context_, object_, std::forward<F>(callback));
       return {*context_, cb};
    }
 
