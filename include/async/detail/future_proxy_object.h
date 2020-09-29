@@ -28,29 +28,31 @@ namespace detail {
 
    /////////////////////////////////////////////////////////////////////////////////////////////////
    template<typename R, typename F, typename A>
-   struct future_proxy_object_base : future_callback_base<future_trait_t<R>, F, A> {
+   struct future_proxy_object<R, F, A> : future_callback_base<future_trait_t<R>, F, A>  {
       using subject_type = shared_ptr <future_object<A>>;
       using super = future_callback_base<future_trait_t<R>, F, A>;
-      using super::super;
-   };
-
-   /////////////////////////////////////////////////////////////////////////////////////////////////
-   template<typename R, typename F, typename A>
-   struct future_proxy_object<R, F, A, std::enable_if_t<std::is_invocable_r_v<R, std::decay_t<F>, A const &>>>
-      : future_proxy_object_base<R, F, A> {
-      using super = future_proxy_object_base<R, F, A>;
       using super::super;
 
       auto on_future_ready() noexcept -> void override {
          if(!future_) {
-            auto future = super::f_(super::subject_->get_value());
+            R future;
+            if constexpr (std::is_void_v<A>) {
+               future = super::f_();
+            } else {
+               future = super::f_(super::subject_->get_value());
+            }
+
             if(future.object_) {
                future_ = future.object_;
                super::subject_.release();
                future_->add_observer(this);
             }
          } else {
-            super::set_value(future_->get_value());
+            if constexpr (std::is_void_v<future_trait_t<R>>) {
+               super::set_value();
+            } else {
+               super::set_value(future_->get_value());
+            }
             future_.release();
             super::commit();
          }
@@ -65,27 +67,6 @@ namespace detail {
       }
 
       typename R::object_type future_;
-   };
-
-   template<typename R, typename F>
-   struct future_proxy_object<R, F, void, std::enable_if_t<std::is_invocable_r_v<R, std::decay_t<F>>>>
-      : future_proxy_object_base<R, F, void> {
-      using super = future_proxy_object_base<R, F, void>;
-      using super::super;
-
-      auto on_future_ready() noexcept -> void override {
-         auto future = super::f_();
-         if(future.object_) {
-            super::move_observers(*future.object_);
-         }
-         destroy();
-      }
-
-   private:
-      auto destroy() noexcept -> void {
-         super::destroy();
-         super::detach_subject();
-      }
    };
 }
 
