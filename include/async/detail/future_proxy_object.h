@@ -7,28 +7,12 @@
 
 #include <async/detail/future_observer.h>
 #include <async/detail/future_object.h>
-
-template<typename T>
-struct future;
+#include <async/detail/future_trait.h>
 
 namespace detail {
-   template<typename R, typename F, typename A, typename = void>
-   struct future_proxy_object;
 
-   template<typename T>
-   struct future_trait;
-
-   template<typename T>
-   struct future_trait<future<T>> {
-      using type = T;
-   };
-
-   template<typename T>
-   using future_trait_t = typename future_trait<T>::type;
-
-   /////////////////////////////////////////////////////////////////////////////////////////////////
    template<typename R, typename F, typename A>
-   struct future_proxy_object<R, F, A> : future_callback_base<future_trait_t<R>, F, A>  {
+   struct future_proxy_object : future_callback_base<future_trait_t<R>, F, A>  {
       using subject_type = shared_ptr <future_object<A>>;
       using super = future_callback_base<future_trait_t<R>, F, A>;
       using super::super;
