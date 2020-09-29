@@ -57,14 +57,14 @@ template<>
 struct promise<void> : promise_base<void> {
    using super = promise_base<void>;
 
-   auto set_value() -> void {
+   auto set_value() noexcept -> void {
       auto future = super::future_.lock();
       if(future) {
          future->set_value();
       }
    }
 
-   auto on_fail(status_t status) -> void {
+   auto on_fail(status_t status) noexcept -> void {
       auto future = super::future_.lock();
       if(future) {
          future->on_fail(status);

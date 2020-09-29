@@ -29,7 +29,8 @@ namespace detail {
       using type = SEQ;
    };
 
-   template<typename T> struct wrapper_t {
+   template<typename T>
+   struct wrapper_t {
       using type = T;
    };
 
@@ -37,8 +38,8 @@ namespace detail {
    using tuple_index_t = typename filter_out<0, std::index_sequence<>, Xs...>::type;
 
    template<typename ... Xs, std::size_t ... Is>
-   auto tuple_trait(std::tuple<Xs...> t, std::index_sequence<Is...>)
-   -> std::tuple<std::decay_t<decltype(std::declval<typename std::decay_t<decltype(std::get<Is>(t))>::type>())> ...>;
+   auto tuple_trait(std::tuple<Xs...> t, std::index_sequence<Is...>) noexcept ->
+   std::tuple<std::decay_t<decltype(std::declval<typename std::decay_t<decltype(std::get<Is>(t))>::type>())> ...>;
 
    template<typename ... Xs>
    using tuple_trait_t = decltype(tuple_trait(std::tuple<wrapper_t<Xs>...>{}, tuple_index_t<Xs...>{}));

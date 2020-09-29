@@ -11,8 +11,7 @@ namespace detail {
    struct future_observer {
       virtual auto on_future_ready() noexcept -> void = 0;
       virtual auto on_future_fail(status_t cause) noexcept -> void = 0;
-
-      virtual ~future_observer() = default;
+      virtual ~future_observer() noexcept = default;
    };
 }
 

@@ -17,7 +17,7 @@ namespace detail {
       future_callback_base
          ( future_context& context
          , subject_type subject
-         , F&& f)
+         , F&& f) noexcept
             : future_object<R>(context)
             , subject_{std::move(subject)}
             , f_{std::forward<F>(f)} {

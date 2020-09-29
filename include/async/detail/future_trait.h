@@ -13,9 +13,7 @@ namespace detail {
    struct future_trait;
 
    template<typename T>
-   struct future_trait<future<T>> {
-      using type = T;
-   };
+   struct future_trait<future<T>> { using type = T; };
 
    template<typename T>
    using future_trait_t = typename future_trait<T>::type;

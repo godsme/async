@@ -8,7 +8,7 @@
 #include <async/future.h>
 
 template<typename ... Xs>
-auto when_all(future_context& context, future<Xs>& ... futures) {
+auto when_all(future_context& context, future<Xs>& ... futures) noexcept {
    return future<detail::tuple_trait_t<Xs...>>(context, futures...);
 }
 

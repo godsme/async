@@ -8,7 +8,7 @@
 
 struct abstract_future {
    virtual auto on_registered() noexcept -> void = 0;
-   virtual ~abstract_future() = default;
+   virtual ~abstract_future() noexcept = default;
 };
 
 #endif //ASYNC_ABSTRACT_FUTURE_H

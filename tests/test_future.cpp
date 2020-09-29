@@ -27,8 +27,8 @@ namespace {
       promise<int> p;
       {
          auto f = p.get_future(context)
-            .then([](int value) { return value + 10; })
-            .then([](int value) -> bool { return value > 20; })
+            .then([&](int value)  -> int  { return value + 10; })
+            .then([&](int value)  -> bool { return value > 20; })
             .then([&](bool value) -> future<long> {
                promise<long> p1;
                return p1.get_future(context);
@@ -72,9 +72,9 @@ namespace {
             .then([&](long value) { value_set = value; });
 
          auto f2 = p2.get_future(context)
-            .then([](int value) { return value + 10; })
-            .then([](int value) -> bool { return value > 20; })
-            .then([&](bool value) -> future<long> {
+            .then([&](auto value) { return value + 10; })
+            .then([&](auto value) -> bool { return value > 20; })
+            .then([&](auto value) -> future<long> {
                calc.cond = value;
                return calc.p.get_future(context);
             })
@@ -112,15 +112,15 @@ namespace {
       remote_calc  calc;
       {
          auto f1 = p1.get_future(context)
-            .then([&](long value) { value_set = value; })
+            .then([&](auto value) { value_set = value; })
             .fail([&](auto cause) {
                REQUIRE_FALSE(fail_set);
                fail_set = cause; });
 
          auto f2 = p2.get_future(context)
-            .then([](int value) -> int  { return value + 10; })
-            .then([](int value) -> bool { return value > 20; })
-            .then([&](bool value) -> future<long> {
+            .then([&](auto value)  -> int  { return value + 10; })
+            .then([&](auto value)  -> bool { return value > 20; })
+            .then([&](auto value) -> future<long> {
                calc.cond = value;
                return calc.p.get_future(context); });
 
@@ -153,15 +153,15 @@ namespace {
       remote_calc  calc;
       {
          auto f1 = p1.get_future(context)
-            .then([&](long value) { value_set = value; })
+            .then([&](auto value) { value_set = value; })
             .fail([&](auto cause) {
                REQUIRE_FALSE(fail_set);
                fail_set = cause; });
 
          auto f2 = p2.get_future(context)
-            .then([](int value) -> int { return value + 10; })
-            .then([](int value) -> bool { return value > 20; })
-            .then([&](bool value) -> future<long> {
+            .then([&](auto value) -> int  { return value + 10; })
+            .then([&](auto value) -> bool { return value > 20; })
+            .then([&](auto value) -> future<long> {
                calc.cond = value;
                return calc.p.get_future(context); });
 
@@ -185,12 +185,12 @@ namespace {
       remote_calc  calc;
       {
          auto f1 = p1.get_future(context)
-            .then([&](long value) { value_set = value; });
+            .then([&](auto value) { value_set = value; });
 
          auto f2 = p2.get_future(context)
-            .then([](int value) -> void { })
-            .then([] { return true; })
-            .then([&](bool value) -> future<long> {
+            .then([&](auto value) -> void { })
+            .then([&] { return true; })
+            .then([&](auto value) -> future<long> {
                calc.cond = value;
                return calc.p.get_future(context); }).sink(p1);
 
@@ -229,19 +229,20 @@ namespace {
             .then([&](long value) { return value; });
 
          auto f2 = p2.get_future(context)
-            .then([](int value) -> int { return value + 10; })
-            .then([](int value) -> bool { return value > 20; })
-            .then([&](bool value) -> future<long> {
+            .then([&](auto value) -> int  { return value + 10; })
+            .then([&](auto value) -> bool { return value > 20; })
+            .then([&](auto value) -> future<long> {
                calc.cond = value;
                return calc.p.get_future(context); });
 
-         auto f3 = when_all(context, f1, f2).then([&](auto v1, long v2){
+         auto f3 = when_all(context, f1, f2).then([&](auto v1, long v2) {
             return v1 + v2;
          });
 
-         auto f4 = when_all(context, f1, f2, f3).then([&](auto v1, auto v2, auto v3){
-            value_set = v1 + v2 + v3;
-         });
+         auto f4 = when_all(context, f1, f2, f3)
+            .then([&](auto v1, auto v2, auto v3) {
+               value_set = v1 + v2 + v3;
+            });
 
          REQUIRE(context.size() == 0);
       }

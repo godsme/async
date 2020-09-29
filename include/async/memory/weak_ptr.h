@@ -61,6 +61,7 @@ private:
    auto add_ref() noexcept -> void {
       if(ptr_ != nullptr) intrusive_ptr_add_weak_ref(ptr_);
    }
+
 private:
    shared_ptr_ctrl_block* ptr_{};
 };

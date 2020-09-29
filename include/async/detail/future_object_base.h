@@ -15,13 +15,11 @@
 #include <memory>
 
 namespace detail {
-   template<typename T>
-   struct future_callback_trait {
+   template<typename T> struct future_callback_trait {
       using type = std::function<auto(T) -> void>;
    };
 
-   template<>
-   struct future_callback_trait<void> {
+   template<> struct future_callback_trait<void> {
       using type = std::function<auto() -> void>;
    };
 
@@ -30,57 +28,40 @@ namespace detail {
       using callback_type = typename future_callback_trait<T>::type;
       using observer_type = future_observer*;
 
-      explicit future_object_base(future_context& context) : context_{context} {}
+      explicit future_object_base(future_context& context) noexcept : context_{context} {}
 
       auto set_fail_handler(failure_handler&& handler) noexcept -> void {
          if(f_on_fail_) return;
-         if(!ready_) {
-            f_on_fail_ = std::move(handler);
-         } else if(!present_) {
-            handler(failure_);
-         }
+         if(!ready_) { f_on_fail_ = std::move(handler); }
+         else if(!present_) { handler(failure_); }
       }
 
       auto move_observers(future_object_base<T>& to) noexcept -> void {
-         for (auto &observer: observers_) {
-            to.add_observer(observer);
-         }
+         for (auto &observer: observers_) { to.add_observer(observer); }
          observers_.clear();
-
-         if(f_on_fail_) {
-            to.set_fail_handler(std::move(f_on_fail_));
-         }
+         if(f_on_fail_) { to.set_fail_handler(std::move(f_on_fail_)); }
       }
 
-      auto add_observer(observer_type observer) {
-         if(ready_) {
-            notify_observer_(observer);
-         } else {
-            observers_.emplace_back(std::move(observer));
-         }
+      auto add_observer(observer_type observer) noexcept -> void {
+         if(ready_) { notify_observer_(observer); }
+         else { observers_.emplace_back(std::move(observer)); }
       }
 
       auto commit() noexcept -> void {
          if (ready_ ) return;
          ready_ = true;
-         if(!present_ && static_cast<bool>(f_on_fail_)) {
-            f_on_fail_(failure_);
-         }
+         if(!present_ && static_cast<bool>(f_on_fail_)) { f_on_fail_(failure_); }
          notify_observers();
          destroy();
       }
 
-      virtual auto cancel(status_t cause) noexcept -> void {
-         do_cancel(cause);
-      }
+      virtual auto cancel(status_t cause) noexcept -> void { do_cancel(cause); }
 
       auto deregister_observer(future_observer* observer, status_t cause) noexcept -> void {
          auto result = std::find(observers_.begin(), observers_.end(), observer);
          if(result != observers_.end()) {
             observers_.erase(result);
-            if(observers_.empty()) {
-               cancel(cause);
-            }
+            if(observers_.empty()) { cancel(cause); }
          }
       }
 
@@ -92,34 +73,26 @@ namespace detail {
       auto ready() const noexcept -> bool { return ready_; }
 
       auto destroy() noexcept -> void {
-         if(registered) {
-            context_.unregister_future(this);
-            registered = false;
-         }
+         if(!registered_) return;
+         context_.unregister_future(this);
+         registered_ = false;
       }
 
-      auto on_registered() noexcept -> void override {
-         registered = true;
-      }
+      auto on_registered() noexcept -> void override { registered_ = true; }
+      auto get_context() const noexcept -> future_context* { return &context_; }
 
-      auto get_context() const noexcept -> future_context* {
-         return &context_;
-      }
-
-      virtual ~future_object_base() = default;
+      virtual ~future_object_base() noexcept = default;
 
    protected:
-      auto cancel_observers(status_t cause) {
+      auto cancel_observers(status_t cause) noexcept -> void {
          for (auto &observer: observers_) {
             cancel_observer(observer, cause);
          }
          observers_.clear();
       }
 
-      auto notify_observers() {
-         for (auto &observer: observers_) {
-            notify_observer_(observer);
-         }
+      auto notify_observers() noexcept -> void {
+         for (auto &observer: observers_) { notify_observer_(observer); }
          observers_.clear();
       }
 
@@ -127,9 +100,7 @@ namespace detail {
       auto do_cancel(status_t cause) noexcept -> void {
          if(ready_) return;
          ready_ = true;
-         if(f_on_fail_) {
-            f_on_fail_(cause);
-         }
+         if(f_on_fail_) f_on_fail_(cause);
          cancel_observers(cause);
          destroy();
       }
@@ -150,7 +121,7 @@ namespace detail {
       failure_handler f_on_fail_;
 
    protected:
-      bool registered{false};
+      bool registered_{false};
       bool present_{false};
       bool ready_{false};
    };

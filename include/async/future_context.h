@@ -40,8 +40,6 @@ private:
    std::set<future_handle> futures_{};
 };
 
-struct future_context : page_allocator, future_registry {
-
-};
+struct future_context : page_allocator, future_registry {};
 
 #endif //ASYNC_ACTOR_FUTURE_CONTEXT_H
